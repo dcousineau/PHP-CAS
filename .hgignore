@@ -1,0 +1,3 @@
+glob:.settings/*
+glob:.buildpath
+glob:.project
