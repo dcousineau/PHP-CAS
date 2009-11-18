@@ -46,6 +46,12 @@ class CAS_Client
      * @var CAS_Version
      */
     protected $_version;
+    
+    /**
+     * 
+     * @var CAS_Ticket|null
+     */
+    protected $_ticket = null;
 
     /**
      * 
@@ -188,7 +194,7 @@ class CAS_Client
      * @param CAS_Ticket $ticket
      * @return CAS_Client *fluent interface*
      */
-    public function setTicket(CAS_Ticket $ticket)
+    public function setTicket(CAS_Ticket $ticket = null)
     {
         $this->_ticket = $ticket;
         return $this;
