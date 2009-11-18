@@ -36,7 +36,7 @@ class CAS_Ticket
     public static function createFromGET($key = 'ticket')
     {
         if( !isset($_GET[$key]) )
-            return false;
+            return null;
         
         return new self($_GET[$key]);
     }
