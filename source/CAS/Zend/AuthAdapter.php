@@ -59,11 +59,7 @@ class CAS_Zend_AuthAdapter implements Zend_Auth_Adapter_Interface
                 );
             }
         }
-        catch( Doctrine_Exception $e )
-        {
-            throw $e; //This is a database (BIG) error, don't trap it!
-        }
-        catch( Exception $e )
+        catch( CAS_Exception $e )
         {
             $result = new Zend_Auth_Result(
                 Zend_Auth_Result::FAILURE,
