@@ -11,10 +11,23 @@
  */
 class CAS_Ticket
 {
+    /**
+     * 
+     * @var string
+     */
     protected $_ticketid;
+    
+    /**
+     * 
+     * @var string
+     */
     protected $_netid;
+    
+    /**
+     * 
+     * @var string
+     */
     protected $_uin;
-    protected $_user;
     
     /**
      * 
@@ -35,12 +48,11 @@ class CAS_Ticket
      * @param string $uin
      * @param string $user
      */
-    public function __construct($ticketid, $netid = null, $uin = null, $user = null)
+    public function __construct($ticketid, $netid = null, $uin = null)
     {
         $this->setTicketID($ticketid)
              ->setNetID($netid)
-             ->setUIN($uin)
-             ->setUser($user);
+             ->setUIN($uin);
     }
     
     /**
@@ -101,25 +113,5 @@ class CAS_Ticket
     public function getUIN()
     {
         return $this->_uin;
-    }
-
-    /**
-     *
-     * @param string $user
-     * @return CAS_Ticket *Provides a fluid interface*
-     */
-    public function setUser($user)
-    {
-        $this->_user = $user;
-        return $this;
-    }
-
-    /**
-     *
-     * @return string
-     */
-    public function getUser()
-    {
-        return $this->_user;
     }
 }

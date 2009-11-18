@@ -20,12 +20,22 @@ abstract class CAS_Version
     protected $_client;
     
     /**
+     * Validates a given ticket and returns the validated ticket with the user
+     * credentials.
+     * 
+     * Throws a CAS_Exception on validation errors
      * 
      * @param CAS_Ticket $ticket
      * @return CAS_Ticket Validated Ticket
+     * @throws CAS_Exception
      */
     abstract public function validateTicket(CAS_Ticket $ticket = null);
     
+    /**
+     * Returns the fully qualified url for CAS
+     * 
+     * @return string
+     */
     public function getCASURL()
     {
         return ($this->getClient()->getServerSSL() ? 'https://' : 'http://') .
@@ -34,18 +44,36 @@ abstract class CAS_Version
                $this->getClient()->getServerURI();
     }
     
+    /**
+     * Returns the url for the login page, includes the service description
+     * 
+     * This is the url used to redirect the user to.
+     * 
+     * @return string
+     */
     public function getCASLoginService()
     {
         return $this->getCASURL() . '/login?service=' . urlencode($this->getThisService());
     }
     
+    /**
+     * Returns the url for the validation service. ONLY RETURNS THE URL FOR THE
+     * SERVICE THAT RETURNS THE FULL XML PAYLOAD.
+     * 
+     * This is the url used to validate the ticket ID and recieve user credentials.
+     * 
+     * @param CAS_Ticket $ticket
+     * @return string
+     */
     public function getCASValidateService(CAS_Ticket $ticket)
     {
         return $this->getCASURL() . '/serviceValidate?ticket='.urlencode($ticket->getTicketID()).'&service=' . urlencode($this->getThisService());
     }
     
     /**
-     * Returns the full URL (including GET string) of the current page.
+     * Returns the full URL (including GET string) of the current page. Used as
+     * the service descriptor for CAS (namely: the page CAS redirects the user 
+     * to afer a successful login).
      * 
      * @return string
      */

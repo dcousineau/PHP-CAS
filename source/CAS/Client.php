@@ -11,11 +11,34 @@
  */
 class CAS_Client
 {
-    const REDIRECTED_FOR_LOGIN = -10;
+    /**
+     * Indicates the client requires the user to be redirected to the login
+     * service as there is not ticket id present.
+     */
+    const REDIRECTED_FOR_LOGIN = 'REDIRECTED_FOR_LOGIN';
     
+    /**
+     * 
+     * @var boolean
+     */
     protected $_serverSSL = false;
+    
+    /**
+     * 
+     * @var string
+     */
     protected $_serverHostname = null;
+    
+    /**
+     * 
+     * @var int
+     */
     protected $_serverPort = null;
+    
+    /**
+     * 
+     * @var string
+     */
     protected $_serverURI = null;
     
     /**
@@ -24,6 +47,10 @@ class CAS_Client
      */
     protected $_version;
 
+    /**
+     * 
+     * @var array
+     */
     protected $_curlOptions = array(
         CURLOPT_SSL_VERIFYHOST => false,    // verify server's certificate corresponds to its name
         CURLOPT_SSL_VERIFYPEER => false,    // don't verify the whole certificate though
@@ -38,16 +65,20 @@ class CAS_Client
         CURLOPT_MAXREDIRS      => 10,       // stop after 10 redirects
     );
 
+    /**
+     * 
+     * @param array $options
+     */
     public function __construct(array $options = array())
     {
         if( !function_exists('curl_init') )
         {
-            throw new Exception("PHP's CURL extension is required for CAS authentication");
+            throw new CAS_Exception("PHP's CURL extension is required for CAS authentication");
         }
 
         if( !function_exists('simplexml_load_string') )
         {
-            throw new Exception("PHP's SIMPLEXML extension is required for CAS authentication");
+            throw new CAS_Exception("PHP's SIMPLEXML extension is required for CAS authentication");
         }
         
         $this->setOptions($options);
@@ -111,11 +142,6 @@ class CAS_Client
     
             return self::REDIRECTED_FOR_LOGIN;
         }
-    }
-
-    public function logout()
-    {
-        // Nothing to do here
     }
     
     /**
@@ -186,6 +212,7 @@ class CAS_Client
     }
 
     /**
+     * The domain portion of the URL (e.g. http://DOMAIN/path/)
      *
      * @return string
      */
@@ -195,6 +222,7 @@ class CAS_Client
     }
 
     /**
+     * 
      * @param int $port
      * @return CAS_Client *Provides a fluid interface*
      */
@@ -203,7 +231,7 @@ class CAS_Client
         if( $port == null )
             $this->_serverPort = null;
         else if( !is_int($port) )
-            throw new Exception("Port '{$port}' must be an integer");
+            throw new CAS_Exception("Port '{$port}' must be an integer");
         else
             $this->_serverPort = (int)$port;
 
@@ -232,6 +260,7 @@ class CAS_Client
     }
 
     /**
+     * The path portion of the URL (e.g. http://domain/PATH/)
      *
      * @return string
      */
@@ -263,8 +292,17 @@ class CAS_Client
     }
     
     /**
+     * The parameter $version can either be an instance of CAS_Version, a string,
+     * or an array defintion of a version. For example:
      * 
-     * @param CAS_Version|string $version
+     * If $version == '2', this method would look for and instantiate
+     * CAS_Version_2.
+     * 
+     * If $version == array('3', array('arg1', 'arg2')), this method would look
+     * for and instantiate CAS_Version_3 with the args 'arg1' and 'arg2' (e.g. 
+     * new CAS_Version_3('arg1', 'arg2'); )
+     * 
+     * @param CAS_Version|array|string $version
      * @return CAS_Client *Provides a fluid interface*
      */
     public function setVersion($version)
@@ -325,5 +363,36 @@ class CAS_Client
     public function getVersion()
     {
         return $this->_version;
+    }
+    
+    /**
+     * Loads a CAS class based on the PEAR naming standards.
+     * 
+     * For example, passing "CAS_Version_2" causes this method to look for the
+     * file "./Version/2.php" (relative to this file's location).
+     * 
+     * @param string $class
+     */
+    public static function loadClass($class)
+    {
+        $class = explode('_', $class);
+        
+        if( strtoupper($class[0]) != 'CAS')
+            return;
+        
+        unset($class[0]);
+            
+        $file = dirname(__FILE__) . DIRECTORY_SEPARATOR . implode(DIRECTORY_SEPARATOR, $class) . '.php';
+        
+        if( file_exists($file) )
+            require_once $file;
+    }
+    
+    /**
+     * Register's the auto-loader using the spl_autoload_register() function.
+     */
+    public static function registerAutoload()
+    {
+        spl_autoload_register(array(__CLASS__, 'loadClass'));
     }
 }

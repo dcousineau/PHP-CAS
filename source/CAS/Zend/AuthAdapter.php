@@ -25,7 +25,7 @@ class CAS_Zend_AuthAdapter implements Zend_Auth_Adapter_Interface
 
     /**
      * (non-PHPdoc)
-     * @see src/lib/Zend/Auth/Adapter/Zend_Auth_Adapter_Interface#authenticate()
+     * @see Zend/Auth/Adapter/Zend_Auth_Adapter_Interface#authenticate()
      *
      * @return Zend_Auth_Result
      */

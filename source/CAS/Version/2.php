@@ -1,5 +1,26 @@
 <?php
 /**
+ * Class to facilitate communication with the CAS 2.0 server.
+ * 
+ * Version 2.0 merely requires the interpretation of an XML return value in the
+ * following formats:
+ * 
+ * SUCCESS:
+ * 
+ * <cas:serviceResponse xmlns:cas='http://www.yale.edu/tp/cas'>
+ *    <cas:authenticationSuccess>
+ *        <cas:NetID>netid</cas:NetID>
+ *        <cas:UIN>#########</cas:UIN>
+ *    </cas:authenticationSuccess>
+ * </cas:serviceResponse>
+ * 
+ * FAILURE:
+ * 
+ * <cas:serviceResponse xmlns:cas='http://www.yale.edu/tp/cas'>
+ *  <cas:authenticationFailure code="...">
+ *    Optional authentication failure message
+ *  </cas:authenticationFailure>
+ * </cas:serviceResponse>
  *
  *
  * @package     PHPCAS
@@ -13,6 +34,16 @@
  
 class CAS_Version_2 extends CAS_Version
 {
+    /**
+     * Validates a given ticket and returns the validated ticket with the user
+     * credentials.
+     * 
+     * Throws a CAS_Exception on validation errors
+     * 
+     * @param CAS_Ticket $ticket
+     * @return CAS_Ticket Validated Ticket
+     * @throws CAS_Exception
+     */
     public function validateTicket(CAS_Ticket $ticket = null)
     {
         if( !$ticket )
