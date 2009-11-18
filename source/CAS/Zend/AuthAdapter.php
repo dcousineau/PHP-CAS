@@ -33,7 +33,7 @@ class CAS_Zend_AuthAdapter implements Zend_Auth_Adapter_Interface
     {
         try
         {
-            $ticket = $this->getCASClient()->login(false);
+            $ticket = $this->getCASClient()->login(null, false);
 
             if( $ticket === CAS_Client::REDIRECTED_FOR_LOGIN )
             {

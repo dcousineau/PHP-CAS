@@ -133,6 +133,11 @@ class CAS_Client
     {
         if( $ticket )
         {
+            $this->setTicket($ticket);
+            return $this->getVersion()->validateTicket($ticket);
+        }
+        else if( ($ticket = $this->getTicket()) instanceOf CAS_Ticket )
+        {
             return $this->getVersion()->validateTicket($ticket);
         }
         else
@@ -176,6 +181,26 @@ class CAS_Client
         curl_close($ch);
 
         return $output;
+    }
+    
+    /**
+     * 
+     * @param CAS_Ticket $ticket
+     * @return CAS_Client *fluent interface*
+     */
+    public function setTicket(CAS_Ticket $ticket)
+    {
+        $this->_ticket = $ticket;
+        return $this;
+    }
+    
+    /**
+     * 
+     * @return CAS_Ticket
+     */
+    public function getTicket()
+    {
+        return $this->_ticket;
     }
     
     /**
