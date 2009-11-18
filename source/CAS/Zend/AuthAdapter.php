@@ -65,8 +65,6 @@ class CAS_Zend_AuthAdapter implements Zend_Auth_Adapter_Interface
                 Zend_Auth_Result::FAILURE,
                 null,
                 (array)sprintf('%s',
-                    //preg_replace('#^' . preg_quote(CASEMAN_ROOT_PATH, '#') . '#i', '', $e->getFile()),
-                    //$e->getLine(),
                     $e->getMessage()
                 )
             );
