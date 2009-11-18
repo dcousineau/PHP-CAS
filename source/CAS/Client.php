@@ -2,7 +2,7 @@
 /**
  *
  *
- * @package     PHP CAS
+ * @package     PHPCAS
  *
  * @author      Daniel Cousineau <danielc@doit.tamu.edu>
  * 
@@ -13,12 +13,18 @@ class CAS_Client
 {
     const REDIRECTED_FOR_LOGIN = -10;
     
-    protected $serverSSL = false;
-    protected $serverHostname = null;
-    protected $serverPort = null;
-    protected $serverURI = null;
+    protected $_serverSSL = false;
+    protected $_serverHostname = null;
+    protected $_serverPort = null;
+    protected $_serverURI = null;
+    
+    /**
+     * 
+     * @var CAS_Version
+     */
+    protected $_version;
 
-    protected $curlOptions = array(
+    protected $_curlOptions = array(
         CURLOPT_SSL_VERIFYHOST => false,    // verify server's certificate corresponds to its name
         CURLOPT_SSL_VERIFYPEER => false,    // don't verify the whole certificate though
         CURLOPT_RETURNTRANSFER => true,     // return web page
@@ -32,7 +38,7 @@ class CAS_Client
         CURLOPT_MAXREDIRS      => 10,       // stop after 10 redirects
     );
 
-    public function __construct($serverHostname = null, $serverPort = null, $serverURI = null, $serverSSL = false, $curlOptions = array())
+    public function __construct(array $options = array())
     {
         if( !function_exists('curl_init') )
         {
@@ -43,69 +49,92 @@ class CAS_Client
         {
             throw new Exception("PHP's SIMPLEXML extension is required for CAS authentication");
         }
-
-        $this->setServerHostname($serverHostname)
-             ->setServerPort($serverPort)
-             ->setServerURI($serverURI)
-             ->setServerSSL($serverSSL)
-             ->setCurlOptions($curlOptions);
+        
+        $this->setOptions($options);
     }
-
-    public function login($autoRedirect = true)
+    
+    /**
+     *
+     * @param array $options
+     * @return CAS_Client *fluent interface*
+     */
+    public function setOptions(array $options)
     {
-        if( $ticket = $this->createTicketFromGET() )
+        foreach( $options as $key => $value )
         {
-            return $ticket;
+            $method = "set$key";
+            
+            if( $method == strtolower(__FUNCTION__) )
+                throw new CAS_Exception("Invalid Option '$key'");
+            
+            $reflection = new ReflectionObject($this);
+            
+            if( $reflection->hasMethod($method) )
+            {
+                if( !is_array($value) )
+                    $value = array($value);
+                
+                $reflection->getMethod($method)->invokeArgs($this, $value);
+            }
+            else
+            {
+                throw new CAS_Exception("'$key' option does not exist");
+            }
         }
-
-        if( $autoRedirect )
-            header('Location: ' . $this->getCASLoginService());
-
-        return self::REDIRECTED_FOR_LOGIN;
+        
+        return $this;
+    }
+    
+    /**
+     * Triggers a login.
+     * 
+     * If a ticket is present in the _GET string, it validates and returns the
+     * ticket.
+     * 
+     * If not ticket is present it redirects to the login service (only if
+     * $autoRedirect is set to true) and returns a CAS_Client::REDIRECTED_FOR_LOGIN 
+     * status code.
+     * 
+     * @param boolean $autoRedirect
+     * @return CAS_Ticket|int
+     */
+    public function login(CAS_Ticket $ticket = null, $autoRedirect = true)
+    {
+        if( $ticket )
+        {
+            return $this->getVersion()->validateTicket($ticket);
+        }
+        else
+        {
+            if( $autoRedirect )
+                header('Location: ' . $this->getCASLoginService());
+    
+            return self::REDIRECTED_FOR_LOGIN;
+        }
     }
 
     public function logout()
     {
         // Nothing to do here
     }
-
-    public function createTicketFromGET()
+    
+    /**
+     * Shortcut to get CAS Login Service URL from the CAS version
+     * 
+     * @return string
+     */
+    public function getCASLoginService()
     {
-        if( !isset($_GET['ticket']) )
-            return false;
-
-        $ticket = new CAS_Ticket($_GET['ticket']);
-
-        return $this->validateTicket($ticket);
+        return $this->getVersion()->getCASLoginService();
     }
-
-    public function validateTicket(CAS_Ticket $ticket)
-    {
-        $output = $this->curl_fetch($this->getCASValidateService($ticket));
-
-        $return_data = simplexml_load_string($output);
-
-        $cas_namespace = $return_data->getDocNamespaces();
-        $cas_namespace = $cas_namespace['cas'];
-
-        if( isset($return_data->children($cas_namespace)->authenticationFailure) )
-        {
-            throw new Exception($return_data->children($cas_namespace)->authenticationFailure);
-        }
-        elseif( isset($return_data->children($cas_namespace)->authenticationSuccess) )
-        {
-            $ticket->setNetID($return_data->children($cas_namespace)->authenticationSuccess->NetID)
-                   ->setUIN($return_data->children($cas_namespace)->authenticationSuccess->UIN);
-
-            return $ticket;
-        }
-        else
-        {
-            throw new Exception("Possible Malformed CAS Response");
-        }
-    }
-
-    protected function curl_fetch($url)
+    
+    /**
+     * Wrapper function to make a CURL request
+     * 
+     * @param string $url
+     * @return string
+     */
+    public function curl_fetch($url)
     {
         $ch = curl_init($url);
         
@@ -115,54 +144,14 @@ class CAS_Client
 
         if( $output === false )
         {
-            throw new Exception("CURL Error: #" . curl_errno($ch) . " " . curl_error($ch));
+            throw new CAS_Exception("CURL Error: #" . curl_errno($ch) . " " . curl_error($ch));
         }
 
         curl_close($ch);
 
         return $output;
     }
-
-    public function getCASURL()
-    {
-        return ($this->getServerSSL() ? 'https://' : 'http://') .
-               $this->getServerHostname() .
-               ($this->getServerPort() !== null ? ':'.$this->getServerPort() : '') .
-               $this->getServerURI();
-    }
-
-    public function getCASLoginService()
-    {
-        return $this->getCASURL() . '/login?service=' . urlencode($this->getThisService());
-    }
-
-    public function getCASValidateService(CAS_Ticket $ticket)
-    {
-        return $this->getCASURL() . '/serviceValidate?ticket='.urlencode($ticket->getTicketID()).'&service=' . urlencode($this->getThisService());
-    }
-
-    /**
-     * Returns the full URL (including GET string) of the current page.
-     * 
-     * @return string
-     */
-    protected function getThisService()
-    {
-        $this_service = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on' ? 'https://' : 'http://' ) .
-                        $_SERVER['HTTP_HOST'];
-
-        if( isset($_SERVER['QUERY_STRING']) && trim($_SERVER['QUERY_STRING']) != '' )
-        {
-            $this_service .= preg_replace('#'.preg_quote('?'.$_SERVER['QUERY_STRING'],'#').'$#i', '', $_SERVER['REQUEST_URI']);
-        }
-        else
-        {
-            $this_service .= $_SERVER['REQUEST_URI'];
-        }
-
-        return $this_service;
-    }
-
+    
     /**
      * Force the use of SSL when connecting to the CAS server
      *
@@ -171,7 +160,7 @@ class CAS_Client
      */
     public function setServerSSL($ssl)
     {
-        $this->serverSSL = (bool)$ssl;
+        $this->_serverSSL = (bool)$ssl;
         return $this;
     }
 
@@ -181,7 +170,7 @@ class CAS_Client
      */
     public function getServerSSL()
     {
-        return (bool)$this->serverSSL;
+        return (bool)$this->_serverSSL;
     }
 
     /**
@@ -192,7 +181,7 @@ class CAS_Client
      */
     public function setServerHostname($hostname)
     {
-        $this->serverHostname = trim($hostname, '\\/');
+        $this->_serverHostname = trim($hostname, '\\/');
         return $this;
     }
 
@@ -202,7 +191,7 @@ class CAS_Client
      */
     public function getServerHostname()
     {
-        return $this->serverHostname;
+        return $this->_serverHostname;
     }
 
     /**
@@ -212,11 +201,11 @@ class CAS_Client
     public function setServerPort($port)
     {
         if( $port == null )
-            $this->serverPort = null;
+            $this->_serverPort = null;
         else if( !is_int($port) )
             throw new Exception("Port '{$port}' must be an integer");
         else
-            $this->serverPort = (int)$port;
+            $this->_serverPort = (int)$port;
 
         return $this;
     }
@@ -227,7 +216,7 @@ class CAS_Client
      */
     public function getServerPort()
     {
-        return $this->serverPort;
+        return $this->_serverPort;
     }
 
     /**
@@ -238,7 +227,7 @@ class CAS_Client
      */
     public function setServerURI($uri)
     {
-        $this->serverURI = '/' . trim($uri,'\\/');
+        $this->_serverURI = '/' . trim($uri,'\\/');
         return $this;
     }
 
@@ -248,7 +237,7 @@ class CAS_Client
      */
     public function getServerURI()
     {
-        return $this->serverURI;
+        return $this->_serverURI;
     }
 
     /**
@@ -259,8 +248,10 @@ class CAS_Client
     {
         foreach( $options as $key => $value )
         {
-            $this->curlOptions[$key] = $value;
+            $this->_curlOptions[$key] = $value;
         }
+        
+        return $this;
     }
 
     /**
@@ -268,6 +259,71 @@ class CAS_Client
      */
     public function getCurlOptions()
     {
-        return $this->curlOptions;
+        return $this->_curlOptions;
+    }
+    
+    /**
+     * 
+     * @param CAS_Version|string $version
+     * @return CAS_Client *Provides a fluid interface*
+     */
+    public function setVersion($version)
+    {
+        if( $version instanceOf CAS_Version )
+        {
+            $this->_version = $version;
+        }
+        else if( is_string($version) )
+        {
+            $class = "CAS_Version_$version";
+            
+            if( class_exists($class) )
+            {
+                $this->_version = new $class();
+            }
+            else
+            {
+                throw new CAS_Exception("CAS version $version class not found (Looking for '$class')");
+            }
+        }
+        else if( is_array($version) && count($version) > 0 && count($version) <= 2 )
+        {
+            $version_no = $version[0];
+            $class = "CAS_Version_$version_no";
+            
+            if( class_exists($class) )
+            {
+                $reflection = new ReflectionClass($class);
+                
+                if( !isset($version[1]) )
+                    $version[1] = array();
+                    
+                if( !is_array($version[1]) )
+                    $version[1] = array($version[1]);
+                
+                $this->_version = $reflection->newInstanceArgs($version[1]);
+            }
+            else
+            {
+                throw new CAS_Exception("CAS version $version_no class not found (Looking for '$class')");
+            }
+        }
+        else
+        {
+            throw new CAS_Exception("Invalid version provided");
+        }
+        
+        $this->_version->setClient($this);
+        
+        return $this;
+    }
+    
+    /**
+     * 
+     * @return CAS_Version
+     */
+    public function getVersion()
+    {
+        return $this->_version;
     }
 }

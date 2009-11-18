@@ -2,7 +2,7 @@
 /**
  *
  *
- * @package     PHP CAS
+ * @package     PHPCAS
  *
  * @author      Daniel Cousineau <danielc@doit.tamu.edu>
  * 
@@ -15,7 +15,19 @@ class CAS_Ticket
     protected $_netid;
     protected $_uin;
     protected $_user;
-
+    
+    /**
+     * 
+     * @return CAS_Ticket
+     */
+    public static function createFromGET($key = 'ticket')
+    {
+        if( !isset($_GET[$key]) )
+            return false;
+        
+        return new self($_GET[$key]);
+    }
+    
     /**
      *
      * @param string $ticketid

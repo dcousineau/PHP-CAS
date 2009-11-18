@@ -15,14 +15,25 @@ require_once dirname(__FILE__) . '/common.php';
 
 if( !isset($_SESSION['auth']) )
 {
-    $cas_client = new CAS_Client(
-        'netid.tamu.edu',
-        null,
-        '/cas',
-        true
+    $version_2 = array(
+        'serverHostname' => 'netid-dev.tamu.edu',
+        'serverPort' => null,
+        'serverURI' => '/cas',
+        'serverSSL' => true,
+        'version' => array('2', array()),
     );
     
-    $ticket = $cas_client->login(false);
+    $version_3 = array(
+        'serverHostname' => 'cas-dev.tamu.edu',
+        'serverPort' => null,
+        'serverURI' => '/cas',
+        'serverSSL' => true,
+        'version' => array('3', array()),
+    );
+    
+    $cas_client = new CAS_Client($version_3);
+    
+    $ticket = $cas_client->login(CAS_Ticket::createFromGET(), false);
     
     if( $ticket === CAS_Client::REDIRECTED_FOR_LOGIN )
     {
