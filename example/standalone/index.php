@@ -8,7 +8,7 @@
  * @author      Daniel Cousineau <danielc@doit.tamu.edu>
  * 
  * @license     http://www.opensource.org/licenses/mit-license.php MIT License
- * @copyright   © 2009 Department of IT, Division of Student Affairs, Texas A&M University
+ * @copyright   Â© 2010 Department of IT, Division of Student Affairs, Texas A&M University
  */
 
 require_once dirname(__FILE__) . '/common.php';
