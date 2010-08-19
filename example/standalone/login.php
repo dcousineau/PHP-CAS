@@ -8,7 +8,7 @@
  * @author      Daniel Cousineau <danielc@doit.tamu.edu>
  * 
  * @license     http://www.opensource.org/licenses/mit-license.php MIT License
- * @copyright   © 2009 Department of IT, Division of Student Affairs, Texas A&M University
+ * @copyright   ï¿½ 2009 Department of IT, Division of Student Affairs, Texas A&M University
  */
 
 require_once dirname(__FILE__) . '/common.php';
@@ -28,7 +28,7 @@ if( !isset($_SESSION['auth']) )
         'serverPort' => null,
         'serverURI' => '/cas',
         'serverSSL' => true,
-        'version' => array('3', array()),
+        'version' => array('3', array('renew' => true)),
     );
     
     $cas_client = new CAS_Client($version_3);

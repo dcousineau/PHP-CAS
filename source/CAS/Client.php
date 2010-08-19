@@ -7,7 +7,7 @@
  * @author      Daniel Cousineau <danielc@doit.tamu.edu>
  * 
  * @license     http://www.opensource.org/licenses/mit-license.php MIT License
- * @copyright   © 2009 Department of IT, Division of Student Affairs, Texas A&M University
+ * @copyright   ï¿½ 2009 Department of IT, Division of Student Affairs, Texas A&M University
  */
 class CAS_Client
 {
@@ -333,7 +333,8 @@ class CAS_Client
      * for and instantiate CAS_Version_3 with the args 'arg1' and 'arg2' (e.g. 
      * new CAS_Version_3('arg1', 'arg2'); )
      * 
-     * @param CAS_Version|array|string $version
+     * @param CAS_Version|string $version
+     * @param mixed $arg1,... Arguments to pass to the version object if setVersion is handling the creation
      * @return CAS_Client *Provides a fluid interface*
      */
     public function setVersion($version)
@@ -342,35 +343,18 @@ class CAS_Client
         {
             $this->_version = $version;
         }
-        else if( is_string($version) )
+        else if( !empty($version) )
         {
             $class = "CAS_Version_$version";
-            
-            if( class_exists($class) )
-            {
-                $this->_version = new $class();
-            }
-            else
-            {
-                throw new CAS_Exception("CAS version $version class not found (Looking for '$class')");
-            }
-        }
-        else if( is_array($version) && count($version) > 0 && count($version) <= 2 )
-        {
-            $version_no = $version[0];
-            $class = "CAS_Version_$version_no";
-            
+
+            $args = func_get_args();
+            unset($args[0]);
+
             if( class_exists($class) )
             {
                 $reflection = new ReflectionClass($class);
-                
-                if( !isset($version[1]) )
-                    $version[1] = array();
-                    
-                if( !is_array($version[1]) )
-                    $version[1] = array($version[1]);
-                
-                $this->_version = $reflection->newInstanceArgs($version[1]);
+
+                $this->_version = $reflection->newInstanceArgs((array)$args);
             }
             else
             {

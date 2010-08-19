@@ -8,7 +8,7 @@
  * @author      Daniel Cousineau <danielc@doit.tamu.edu>
  * 
  * @license     http://www.opensource.org/licenses/mit-license.php MIT License
- * @copyright   © 2009 Department of IT, Division of Student Affairs, Texas A&M University
+ * @copyright   ï¿½ 2009 Department of IT, Division of Student Affairs, Texas A&M University
  */
 
 abstract class CAS_Version
@@ -30,6 +30,38 @@ abstract class CAS_Version
      * @throws CAS_Exception
      */
     abstract public function validateTicket(CAS_Ticket $ticket = null);
+
+    /**
+     *
+     * @param array $options
+     * @return CAS_Version *fluent interface*
+     */
+    public function setOptions(array $options)
+    {
+        foreach( $options as $key => $value )
+        {
+            $method = "set$key";
+
+            if( $method == strtolower(__FUNCTION__) )
+                throw new CAS_Exception("Invalid Option '$key'");
+
+            $reflection = new ReflectionObject($this);
+
+            if( $reflection->hasMethod($method) )
+            {
+                if( !is_array($value) )
+                    $value = array($value);
+
+                $reflection->getMethod($method)->invokeArgs($this, $value);
+            }
+            else
+            {
+                throw new CAS_Exception("'$key' option does not exist");
+            }
+        }
+
+        return $this;
+    }
     
     /**
      * Returns the fully qualified url for CAS

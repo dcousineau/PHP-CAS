@@ -32,11 +32,36 @@
  * @author      Daniel Cousineau <danielc@doit.tamu.edu>
  * 
  * @license     http://www.opensource.org/licenses/mit-license.php MIT License
- * @copyright   © 2009 Department of IT, Division of Student Affairs, Texas A&M University
+ * @copyright   ï¿½ 2009 Department of IT, Division of Student Affairs, Texas A&M University
  */
  
 class CAS_Version_3 extends CAS_Version
 {
+    /**
+     * @var boolean
+     */
+    protected $_renew = false;
+
+    public function __construct(array $options = array())
+    {
+        $this->setOptions($options);
+    }
+
+    /**
+     * Overrides parent getCASLoginService()
+     *
+     * @return string
+     */
+    public function getCASLoginService()
+    {
+        $loginService = parent::getCASLoginService();
+
+        if( $this->getRenew() )
+            $loginService .= "&renew=true";
+
+        return $loginService;
+    }
+
     /**
      * Validates a given ticket and returns the validated ticket with the user
      * credentials.
@@ -74,5 +99,28 @@ class CAS_Version_3 extends CAS_Version
         {
             throw new CAS_Exception("Possible Malformed CAS Response");
         }
+    }
+    
+    /**
+     * Set whether or not to set the renew flag. The renew flag instructs CAS
+     * to require the user to re-authenticate for your application.
+     *
+     * @param boolean $renew
+     * @return CAS_Client
+     */
+    public function setRenew($renew)
+    {
+        $this->_renew = (boolean)$renew;
+        return $this;
+    }
+
+    /**
+     * Return whether or not to set the renew flag
+     *
+     * @return boolean
+     */
+    public function getRenew()
+    {
+        return $this->_renew;
     }
 }
