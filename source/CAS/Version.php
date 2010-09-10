@@ -123,6 +123,13 @@ abstract class CAS_Version
             $this_service .= $_SERVER['REQUEST_URI'];
         }
 
+        $get = $_GET;
+        unset($get['ticket']);
+
+        $get = http_build_query($get);
+
+        $this_service .= $get ? '?' . $get : '';
+
         return $this_service;
     }
     
